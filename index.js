@@ -18,6 +18,10 @@
 
     3. (exported function) qcd.async
 
+    4. (private class) Queue class
+
+    5. (private class) QueueNode class
+
 */
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -98,7 +102,7 @@ exports.sync = function (sourceDirPath, destinationDirPath) {
     if (!fs.existsSync(sourceDirPath)) {
         throw new Error("QueuedCopyDir failed because source directory (" + sourceDirPath + ") does not exist.");
     }
-    var queue = [];
+    var queue = new Queue();
     // Fill the queue
     addDirToQueue(sourceDirPath, '', queue);
     // Create the destination dir if necessary
@@ -106,7 +110,7 @@ exports.sync = function (sourceDirPath, destinationDirPath) {
         fs.mkdirSync(destinationDirPath);
     }
     // Traverse queue
-    while (queue.length > 0) {
+    while (queue.size > 0) {
         // Shift queue
         var item = queue.shift();
         var destinationPath = path_1.resolve(destinationDirPath + '/' + item.relativeFilePath);
@@ -132,7 +136,7 @@ exports.async = function (sourceDirPath, destinationDirPath) { return __awaiter(
                 if (!fs.existsSync(sourceDirPath)) {
                     throw new Error("QueuedCopyDir failed because source directory (" + sourceDirPath + ") does not exist.");
                 }
-                queue = [];
+                queue = new Queue();
                 // Fill the queue
                 addDirToQueue(sourceDirPath, '', queue);
                 return [4 /*yield*/, fsExists(destinationDirPath)];
@@ -144,7 +148,7 @@ exports.async = function (sourceDirPath, destinationDirPath) { return __awaiter(
                 _a.sent();
                 _a.label = 3;
             case 3:
-                if (!(queue.length > 0)) return [3 /*break*/, 8];
+                if (!(queue.size > 0)) return [3 /*break*/, 8];
                 item = queue.shift();
                 destinationPath = path_1.resolve(destinationDirPath + '/' + item.relativeFilePath);
                 if (!(item.type == 'dir')) return [3 /*break*/, 5];
@@ -165,3 +169,43 @@ exports.async = function (sourceDirPath, destinationDirPath) { return __awaiter(
         }
     });
 }); };
+/* ===================
+    4. (private class) Queue class
+=================== */
+var Queue = /** @class */ (function () {
+    function Queue() {
+        this.size = 0;
+    }
+    Queue.prototype.push = function (data) {
+        if (this.size == 0) {
+            var newNode = new QueueNode(data);
+            this.first = newNode;
+            this.last = newNode;
+        }
+        else {
+            var newNode = new QueueNode(data);
+            this.last.next = newNode;
+            this.last = this.last.next;
+        }
+        this.size++;
+    };
+    Queue.prototype.shift = function () {
+        if (this.size == 0) {
+            throw new Error("Cannot shift an empty queue.");
+        }
+        var data = this.first.data;
+        this.first = this.first.next;
+        this.size--;
+        return data;
+    };
+    return Queue;
+}());
+/* ===================
+    5. (private class) QueueNode class
+=================== */
+var QueueNode = /** @class */ (function () {
+    function QueueNode(data) {
+        this.data = data;
+    }
+    return QueueNode;
+}());

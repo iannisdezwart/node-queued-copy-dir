@@ -17,6 +17,10 @@
 
 	3. (exported function) qcd.async
 
+	4. (private class) Queue class
+
+	5. (private class) QueueNode class
+
 */
 
 import { resolve as resolvePath } from 'path'
@@ -36,7 +40,7 @@ const fsCopyFile = promisify(fs.copyFile)
 	1. (private function) Add Dir to Queue
 =================== */
 
-const addDirToQueue = (dirPath: string, root: string, queue: CopyQueueItem[]) => {
+const addDirToQueue = (dirPath: string, root: string, queue: Queue<CopyQueueItem>) => {
 	const files = fs.readdirSync(dirPath + '/' + root)
 	
 	for (let file of files) {
@@ -77,7 +81,7 @@ export const sync = (sourceDirPath: string, destinationDirPath: string) => {
 		throw new Error(`QueuedCopyDir failed because source directory (${ sourceDirPath }) does not exist.`)
 	}
 
-	const queue: CopyQueueItem[] = []
+	const queue = new Queue<CopyQueueItem>()
 
 	// Fill the queue
 
@@ -91,7 +95,7 @@ export const sync = (sourceDirPath: string, destinationDirPath: string) => {
 
 	// Traverse queue
 
-	while (queue.length > 0) {
+	while (queue.size > 0) {
 		// Shift queue
 
 		const item = queue.shift()
@@ -120,7 +124,7 @@ export const async = async (sourceDirPath: string, destinationDirPath: string) =
 		throw new Error(`QueuedCopyDir failed because source directory (${ sourceDirPath }) does not exist.`)
 	}
 
-	const queue: CopyQueueItem[] = []
+	const queue = new Queue<CopyQueueItem>()
 
 	// Fill the queue
 
@@ -136,7 +140,7 @@ export const async = async (sourceDirPath: string, destinationDirPath: string) =
 
 	// Traverse queue
 
-	while (queue.length > 0) {
+	while (queue.size > 0) {
 		// Shift queue
 
 		const item = queue.shift()
@@ -153,5 +157,61 @@ export const async = async (sourceDirPath: string, destinationDirPath: string) =
 
 			await fsCopyFile(sourcePath, destinationPath)
 		}
+	}
+}
+
+/* ===================
+	4. (private class) Queue class
+=================== */
+
+class Queue<T> {
+	first: QueueNode<T>
+	last: QueueNode<T>
+	size: number
+	
+	constructor() {
+		this.size = 0
+	}
+
+	push(data: T) {
+		if (this.size == 0) {
+			const newNode = new QueueNode(data)
+			
+			this.first = newNode
+			this.last = newNode
+		} else {
+			const newNode = new QueueNode(data)
+			
+			this.last.next = newNode
+			this.last = this.last.next
+		}
+
+		this.size++
+	}
+
+	shift() {
+		if (this.size == 0) {
+			throw new Error(`Cannot shift an empty queue.`)
+		}
+
+		const { data } = this.first
+		
+		this.first = this.first.next
+		this.size--
+
+		return data
+	}
+}
+
+/* ===================
+	5. (private class) QueueNode class
+=================== */
+
+class QueueNode<T> {
+	data: T
+	next: QueueNode<T>
+	
+	constructor(data: T) {
+		this.data = data
 	}
 }
