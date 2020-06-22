@@ -1,0 +1,12 @@
+{
+  "name": "queued-copy-dir",
+  "version": "0.0.1",
+  "description": "Simple queued copy dir",
+  "main": "index.js",
+  "keywords": [],
+  "author": "Iannis de Zwart",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^14.0.13"
+  }
+}
